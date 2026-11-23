@@ -815,15 +815,13 @@ input[type="date"], input[type="number"] { color-scheme: dark; }
     var box = el('div', { class: 'story' }, [el('h4', { text: 'Battle story' })]);
     if (!storyEdit[b.id] && b.story) {
       b.story.split(/\n\s*\n/).forEach(function (p) { if (p.trim()) box.appendChild(el('p', { text: p.trim() })); });
-      var edit = el('button', { class: 'btn small', type: 'button', text: 'Edit story' });
-      edit.addEventListener('click', function () { storyEdit[b.id] = true; storyDraft[b.id] = b.story; storyMsg[b.id] = ''; renderReports(); });
-      var kids = [edit];
+      var kids = [];
       if (sampleNS) {
         var again = el('button', { class: 'btn small', type: 'button', text: 'Rewrite with Claude' });
         again.addEventListener('click', function () { generateStory(b); });
         kids.push(again);
       }
-      box.appendChild(el('div', { class: 'row' }, kids));
+      if (kids.length) box.appendChild(el('div', { class: 'row' }, kids));
       return box;
     }
     var ta = el('textarea', { id: 'story-' + b.id, class: 'text-input story-input', rows: '9', maxlength: '3000', 'aria-label': 'Battle story', placeholder: 'What happened? Write the tale of the battle here.' });
@@ -859,10 +857,7 @@ input[type="date"], input[type="number"] { color-scheme: dark; }
   function td(label, kids, cls) { return el('td', { 'data-label': label, class: cls || '' }, kids); }
   function renderReports() {
     var box = refs.reports; box.textContent = '';
-    var add = el('button', { class: formOpen ? 'btn small' : 'btn small primary', type: 'button', text: formOpen ? 'Close form' : 'Add battle report', 'aria-expanded': formOpen ? 'true' : 'false' });
-    add.addEventListener('click', function () { formOpen = !formOpen; formError = ''; if (formOpen && !formDraft) formDraft = newDraft(); renderReports(); });
-    box.appendChild(el('div', { class: 'table-head' }, [el('h2', { class: 'ph', text: 'Battle reports' }), add]));
-    if (formOpen) box.appendChild(buildForm());
+    box.appendChild(el('div', { class: 'table-head' }, [el('h2', { class: 'ph', text: 'Battle reports' })]));
     var list = battlesSorted();
     if (!list.length) { box.appendChild(el('p', { class: 'muted', text: 'No battles reported yet.' })); return; }
     var tb = el('tbody');
@@ -870,22 +865,11 @@ input[type="date"], input[type="number"] { color-scheme: dark; }
       var a = areaByN(b.area), w = winnerOf(b);
       var terr = el('button', { class: 'linkish', type: 'button', 'aria-label': 'Show territory ' + b.area + ' on the map' }, [a ? iconSvg(a.type, 18) : null, el('span', { text: '#' + b.area + ' ' + (a ? a.type : 'Unknown') })]);
       terr.addEventListener('click', function () { select(b.area, true); });
-      var act;
-      if (confirmRemove === b.id) {
-        var yes = el('button', { class: 'btn small danger', type: 'button', text: 'Remove' });
-        yes.addEventListener('click', function () { state.battles = state.battles.filter(function (x) { return x.id !== b.id; }); confirmRemove = null; changed(); });
-        var no = el('button', { class: 'btn small', type: 'button', text: 'Keep' });
-        no.addEventListener('click', function () { confirmRemove = null; renderReports(); });
-        act = el('div', { class: 'row tight' }, [yes, no]);
-      } else {
-        act = el('button', { class: 'btn small', type: 'button', text: 'Remove', 'aria-label': 'Remove the report for ' + battleLine(b) });
-        act.addEventListener('click', function () { confirmRemove = b.id; renderReports(); });
-      }
       var open = !!storyOpen[b.id];
       var sbtn = el('button', { class: 'btn small story-btn' + (b.story ? ' has-story' : ''), type: 'button', 'aria-expanded': open ? 'true' : 'false', 'aria-controls': 'story-row-' + b.id,
         'aria-label': (open ? 'Hide' : 'Show') + ' the story of ' + battleLine(b) }, [storyIcon(), el('span', { text: 'Story' })]);
       sbtn.addEventListener('click', function () { storyOpen[b.id] = !open; renderReports(); });
-      act = el('div', { class: 'row tight' }, [sbtn, act]);
+      var act = el('div', { class: 'row tight' }, [sbtn]);
       tb.appendChild(el('tr', { class: open ? 'is-open' : '' }, [
         td('Date', [fmtDate(b.date)], 'nowrap'),
         td('Cycle', [String(b.cycle)], 'num'),
